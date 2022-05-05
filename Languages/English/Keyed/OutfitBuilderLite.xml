@@ -1,0 +1,5 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+    <TooltipRightClick><b>Right click</b> to update outfit filter with currently worn apparels.</TooltipRightClick>
+    <TooltipCtrlClick><b>Ctrl + Click(left or right)</b> to overwrite outfit filter with currently worn apparels.</TooltipCtrlClick>
+</LanguageData>

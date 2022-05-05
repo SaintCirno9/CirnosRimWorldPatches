@@ -34,6 +34,8 @@ namespace CirnosRimWorldPatches
             new EmpirePatch().ApplyPatches(harmony);
             new HskPatch().ApplyPatches(harmony);
             // new VanillaPatch().ApplyPatches(harmony);
+            new OutfitForcedHandlerPatch().ApplyPatches(harmony);
+            new PawnColumnWorker_Outfit_Patch().ApplyPatches(harmony);
             Log.Message("Cirno's RimWorld Patches loaded successfully!");
         }
     }

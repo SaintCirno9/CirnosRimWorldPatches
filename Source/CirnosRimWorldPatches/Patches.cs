@@ -3,6 +3,8 @@ using RimWorld;
 using System;
 using System.Collections.Generic;
 using System.Reflection.Emit;
+using System.Linq;
+using UnityEngine;
 using Verse;
 
 namespace CirnosRimWorldPatches
@@ -21,7 +23,8 @@ namespace CirnosRimWorldPatches
             try
             {
                 int count = 0;
-                var method = AccessTools.Method("FactionColonies.FCBuildingWindow+<>c__DisplayClass24_0:<DoWindowContents>b__1");
+                var method =
+                    AccessTools.Method("FactionColonies.FCBuildingWindow+<>c__DisplayClass24_0:<DoWindowContents>b__1");
                 if (method is not null)
                 {
                     harmony.Patch(method,
@@ -41,7 +44,6 @@ namespace CirnosRimWorldPatches
                             typeof(EmpirePatch).GetMethod(
                                 nameof(EmpireSettlementUpgradeWindowFcUpgradeSettlementTranspiler))));
                     count++;
-
                 }
 
                 if (count == 2)
@@ -121,7 +123,6 @@ namespace CirnosRimWorldPatches
                         transpiler: new HarmonyMethod(
                             typeof(HskPatch).GetMethod(nameof(HSKTraitUtilityPassionUpdateTranspiler))));
                     Log.Message("Cirno's RimWorld Patches: Hsk mod patched successfully!");
-
                 }
             }
             catch (Exception e)
@@ -220,4 +221,70 @@ namespace CirnosRimWorldPatches
             }
         }
     } */
+
+    public class OutfitForcedHandlerPatch : Patch
+    {
+        public override void ApplyPatches(Harmony harmony)
+        {
+            var method = AccessTools.Method(typeof(OutfitForcedHandler), nameof(OutfitForcedHandler.Reset));
+            if (method is not null)
+            {
+                harmony.Patch(method,
+                    prefix: new HarmonyMethod(
+                        typeof(OutfitForcedHandlerPatch).GetMethod(nameof(Reset_Prefix))));
+                Log.Message("Cirno's RimWorld Patches: RimWorld.OutfitForcedHandler::Reset patched successfully!");
+            }
+        }
+
+        public static void Reset_Prefix(OutfitForcedHandler __instance)
+        {
+            Pawn pawn = __instance.ForcedApparel?.FirstOrDefault()?.Wearer;
+            if ( pawn?.outfits is null)
+            {
+                return;
+            }
+
+            Outfit currentOutfit = pawn.outfits.CurrentOutfit;
+            List<Apparel> wornApparel = pawn.apparel.WornApparel;
+            // When ctrl is pressed, clear the outfit filter.
+            if (Event.current.control)
+            {
+                var allowedThingDefs = new List<ThingDef>(currentOutfit.filter.AllowedThingDefs);
+                foreach( var thingDef in allowedThingDefs)
+                {
+                    currentOutfit.filter.SetAllow(thingDef, false);
+                }
+            }
+            // 1 means right click
+            if (Event.current.button == 1 || Event.current.control)
+            {
+                foreach (var apparel in wornApparel)
+                {
+                    currentOutfit.filter.SetAllow(apparel.def, true);
+                }
+            }
+        }
+    }
+
+    public class PawnColumnWorker_Outfit_Patch : Patch
+    {
+        public override void ApplyPatches(Harmony harmony)
+        {
+            var method = AccessTools.Method("RimWorld.PawnColumnWorker_Outfit+<>c__DisplayClass3_0:<DoCell>b__1");
+            if (method is not null)
+            {
+                harmony.Patch(method,
+                    postfix: new HarmonyMethod(
+                        typeof(PawnColumnWorker_Outfit_Patch).GetMethod(nameof(DoCell_b__1_Postfix))));
+                Log.Message(
+                    "Cirno's RimWorld Patches: RimWorld.PawnColumnWorker_Outfit+<>c__DisplayClass3_0:<DoCell>b__1 patched successfully!");
+            }
+        }
+
+        public static void DoCell_b__1_Postfix(ref string __result)
+        {
+            __result += "\n\n" + "TooltipRightClick".Translate();
+            __result += "\n" + "TooltipCtrlClick".Translate();
+        }
+    }
 }
