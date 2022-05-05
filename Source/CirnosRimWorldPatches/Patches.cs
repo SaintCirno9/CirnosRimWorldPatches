@@ -164,7 +164,7 @@ namespace CirnosRimWorldPatches
         }
     }
 
-    public class VanillaPatch : Patch
+    /* public class VanillaPatch : Patch
     {
         public override void ApplyPatches(Harmony harmony)
         {
@@ -219,5 +219,5 @@ namespace CirnosRimWorldPatches
                 }
             }
         }
-    }
+    } */
 }
