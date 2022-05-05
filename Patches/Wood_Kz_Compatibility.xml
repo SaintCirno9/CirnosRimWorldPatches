@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Patch>
+    <Operation Class = "PatchOperationFindMod">
+        <mods>
+            <li>Core SK</li>
+        </mods>
+        <match Class = "PatchOperationFindMod">
+            <mods>
+                <li>【颜正】木材扩展（Wood Kz）</li>
+            </mods>
+            <match Class = "PatchOperationAdd">
+                <xpath>/Defs/ThingDef[defName = "BambooLog" or defName = "IronWoodLog" or defName = "RedWoodLog" or defName = "RoseWoodLog" or defName = "ScentedWoodLog" or defName = "EbonyLog" or defName = "TeakLog" or defName = "WhiteBirchLog"]/stuffProps/categories</xpath>
+                <value>
+                    <li>WoodLogs</li>
+                </value>
+            </match>
+        </match>
+    </Operation>
+</Patch>
