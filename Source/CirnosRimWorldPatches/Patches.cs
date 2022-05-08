@@ -239,7 +239,7 @@ namespace CirnosRimWorldPatches
         public static void Reset_Prefix(OutfitForcedHandler __instance)
         {
             Pawn pawn = __instance.ForcedApparel?.FirstOrDefault()?.Wearer;
-            if ( pawn?.outfits is null)
+            if (pawn?.outfits is null)
             {
                 return;
             }
@@ -250,7 +250,7 @@ namespace CirnosRimWorldPatches
             if (Event.current.control)
             {
                 var allowedThingDefs = new List<ThingDef>(currentOutfit.filter.AllowedThingDefs);
-                foreach( var thingDef in allowedThingDefs)
+                foreach (var thingDef in allowedThingDefs)
                 {
                     currentOutfit.filter.SetAllow(thingDef, false);
                 }
@@ -279,12 +279,91 @@ namespace CirnosRimWorldPatches
                 Log.Message(
                     "Cirno's RimWorld Patches: RimWorld.PawnColumnWorker_Outfit+<>c__DisplayClass3_0:<DoCell>b__1 patched successfully!");
             }
+
+            method = AccessTools.Method(typeof(PawnColumnWorker_Outfit), nameof(PawnColumnWorker_Outfit.DoCell));
+            if (method is not null)
+            {
+                harmony.Patch(method,
+                    transpiler: new HarmonyMethod(typeof(PawnColumnWorker_Outfit_Patch).GetMethod(nameof(DoCell_Generate_Outfit_Transpiler))));
+            }
         }
 
         public static void DoCell_b__1_Postfix(ref string __result)
         {
             __result += "\n\n" + "TooltipRightClick".Translate();
             __result += "\n" + "TooltipCtrlClick".Translate();
+        }
+
+        public static IEnumerable<CodeInstruction> DoCell_Generate_Outfit_Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            var codes = new List<CodeInstruction>(instructions);
+            int count = 0;
+            for (int i = 0; i < codes.Count; i++)
+            {
+                // FileLog.Log(codes[i].ToString());
+                if (codes[i].ToString() == "brtrue.s Label8")
+                {
+                    codes.InsertRange(i + 1, new[]
+                    {
+                        new CodeInstruction(OpCodes.Ldloc_S, 6),
+                        new CodeInstruction(OpCodes.Ldarg_2),
+                        new CodeInstruction(OpCodes.Call, typeof(PawnColumnWorker_Outfit_Patch).GetMethod(nameof(Generate_Outfit_Tooltip)))
+                    });
+                    i += 3;
+                    count++;
+                }
+                else if (codes[i].ToString() == "call static Verse.WindowStack Verse.Find::get_WindowStack()")
+                {
+                    // Log.Message("Cirno's RimWorld Patches: RimWorld.PawnColumnWorker_Outfit::Do_Cell patched successfully!");
+                    codes.InsertRange(i, new[]
+                    {
+                        new CodeInstruction(OpCodes.Ldarg_2),
+                        new CodeInstruction(OpCodes.Call, typeof(PawnColumnWorker_Outfit_Patch).GetMethod(nameof(Generate_Outfit))),
+                        new CodeInstruction(OpCodes.Brfalse_S, codes[i - 1].operand)
+                    });
+                    count++;
+                    break;
+                }
+            }
+            if (count == 2)
+            {
+                Log.Message("Cirno's RimWorld Patches: RimWorld.PawnColumnWorker_Outfit::Do_Cell patched successfully!");
+            }
+            return codes;
+        }
+        public static void Generate_Outfit_Tooltip(Rect rect, Pawn pawn)
+        {
+            if (Mouse.IsOver(rect))
+            {
+                TooltipHandler.TipRegion(rect, new TipSignal("GenerateOutfitTooltip".Translate(), pawn.GetHashCode() * 612));
+            }
+        }
+
+        /// <summary>
+        /// Generate a new outfit for the pawn when right clicked, return value is for if-else state control.
+        /// </summary>
+        /// <param name="pawn"></param>
+        /// <returns></returns>
+        public static bool Generate_Outfit(Pawn pawn)
+        {
+            if (Event.current.control)
+            {
+                List<Apparel> wornApparel = pawn.apparel.WornApparel;
+                Outfit newOutfit = Current.Game.outfitDatabase.MakeNewOutfit();
+                var allowedThingDefs = new List<ThingDef>(newOutfit.filter.AllowedThingDefs);
+                foreach (var thingDef in allowedThingDefs)
+                {
+                    newOutfit.filter.SetAllow(thingDef, false);
+                }
+                for (int i = 0; i < wornApparel.Count; i++)
+                {
+                    newOutfit.filter.SetAllow(wornApparel[i].def, true);
+                }
+                newOutfit.label = pawn.Name.ToStringShort;
+                pawn.outfits.CurrentOutfit = newOutfit;
+                return false;
+            }
+            return true;
         }
     }
 }
